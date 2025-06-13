@@ -1,5 +1,5 @@
 // FILE: src/components/SelfAttentionWorkflow.tsx
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   ReactFlow,
   addEdge,
@@ -8,7 +8,7 @@ import {
   useNodesState,
   useEdgesState,
   Connection,
-  ReactFlowProvider, // Import the provider
+  ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -18,12 +18,16 @@ import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-react';
 
 import { WordVectorNode } from '@/components/workflow/WordVectorNode';
-import { initialNodes as rawInitialNodes, initialEdges } from '@/utils/workflowData';
-import { useState } from 'react';
+import { MatrixNode } from '@/components/workflow/MatrixNode';        // <--- ADD THIS IMPORT
+import { CalculationNode } from '@/components/workflow/CalculationNode'; // <--- ADD THIS IMPORT
 
-// We now only need one node type for this step
+import { initialNodes as rawInitialNodes, initialEdges } from '@/utils/workflowData';
+
+// Define all custom node types used in the workflow
 const nodeTypes = {
   wordVector: WordVectorNode,
+  matrix: MatrixNode,          // <--- ADD THIS LINE
+  calculation: CalculationNode, // <--- ADD THIS LINE
 };
 
 function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: (isDark: boolean) => void }) {
@@ -31,6 +35,13 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+
+  // Placeholder for reset logic for now
+  const handleReset = () => {
+    // In future steps, this will reset completion states etc.
+    setNodes(rawInitialNodes);
+    setEdges(initialEdges);
+  };
 
   return (
     <div className={`h-screen w-full flex flex-col transition-colors duration-300 relative overflow-hidden ${
@@ -44,7 +55,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
           Recurrent Neural Network
         </h1>
         <div className="flex items-center gap-4">
-          <Button onClick={() => {}} variant="outline" size="sm" className="flex items-center gap-2"><RotateCcw className="w-4 h-4" /> Reset</Button>
+          <Button onClick={handleReset} variant="outline" size="sm" className="flex items-center gap-2"><RotateCcw className="w-4 h-4" /> Reset</Button>
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
         </div>
       </div>
@@ -56,7 +67,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          nodeTypes={nodeTypes}
+          nodeTypes={nodeTypes} // This is where React Flow maps the 'type' to the component
           fitView
         >
           <Background gap={32} size={1.5} color={isDark ? '#334155' : '#cbd5e1'} />
@@ -79,4 +90,3 @@ export function SelfAttentionWorkflow() {
     </ReactFlowProvider>
   );
 }
-
