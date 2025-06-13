@@ -9,9 +9,9 @@ import {
 // Node Positions - INCREASED SPACING BETWEEN TIMESTEPS
 const col_static = -800;
 const col_timestep_1 = 0;
-const col_timestep_2 = 2400; // Increased from 1600 to 2400 (800px more spacing)
-const col_timestep_3 = 4800; // Increased from 3200 to 4800 (1600px more spacing)
-const col_timestep_4 = 7200; // Increased from 4800 to 7200 (2400px more spacing)
+const col_timestep_2 = 3000; // Increase from 2400 to 3000
+const col_timestep_3 = 6000; // Increase from 4800 to 6000
+const col_timestep_4 = 9000; // Increase from 7200 to 9000
 
 const row_input = 0;
 const row_h_prev = 400;
@@ -73,8 +73,8 @@ export const initialNodes: Node[] = [
   { id: 't1_w_xh', type: 'matrix', position: { x: col_timestep_1 + weight_offset_x, y: row_input }, data: { label: 'W_xh (T1)', matrix: W_xh, description: 'Input-to-Hidden (3x4)' }, zIndex: 1 },
   { id: 't1_w_hh', type: 'matrix', position: { x: col_timestep_1 + weight_offset_x, y: row_h_prev }, data: { label: 'W_hh (T1)', matrix: W_hh, description: 'Hidden-to-Hidden (4x4)' }, zIndex: 1 },
   { id: 't1_b_h', type: 'matrix', position: { x: col_timestep_1 + weight_offset_x, y: row_calc_h }, data: { label: 'b_h (T1)', matrix: b_h, description: 'Hidden Bias (1x4)' }, zIndex: 1 },
-  { id: 't1_w_hy', type: 'matrix', position: { x: col_timestep_1 + output_weight_offset_x, y: row_input }, data: { label: 'W_hy (T1)', matrix: W_hy, description: 'Hidden-to-Output (4x3)' }, zIndex: 1 },
-  { id: 't1_b_y', type: 'matrix', position: { x: col_timestep_1 + output_weight_offset_x, y: row_h_prev }, data: { label: 'b_y (T1)', matrix: b_y, description: 'Output Bias (1x3)' }, zIndex: 1 },
+  { id: 't1_w_hy', type: 'matrix', position: { x: col_timestep_1 + output_weight_offset_x - 50, y: row_input }, data: { label: 'W_hy (T1)', matrix: W_hy, description: 'Hidden-to-Output (4x3)' }, zIndex: 1 },
+  { id: 't1_b_y', type: 'matrix', position: { x: col_timestep_1 + output_weight_offset_x - 50, y: row_h_prev }, data: { label: 'b_y (T1)', matrix: b_y, description: 'Output Bias (1x3)' }, zIndex: 1 },
   
   {
     id: 't1_calc_h',
@@ -404,7 +404,7 @@ export const initialEdges: Edge[] = [
   // Hidden state flow from t3 to t4
   { id: 'e-t3h-t4prev', source: 't3_calc_h', target: 't4_h_prev', animated: true, style: { stroke: '#ff6b6b', strokeWidth: 3 } },
   
-  // t4_calc_y connections
+  // t4_calc_y connections  
   { id: 'e-h4-t4y', source: 't4_calc_h', target: 't4_calc_y', animated: true },
   { id: 'e-t4why-t4y', source: 't4_w_hy', target: 't4_calc_y', style: { strokeDasharray: '5 5' } },
   { id: 'e-t4by-t4y', source: 't4_b_y', target: 't4_calc_y', style: { strokeDasharray: '5 5' } },
