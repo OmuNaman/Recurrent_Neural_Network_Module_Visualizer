@@ -37,14 +37,17 @@ const nodeTypes = {
   introNode: IntroNode,       // ADD THIS LINE
 };
 
-// Define the sequence of nodes for the first timestep, excluding static nodes
-const TIMESTEP_1_NODES = [
+// Define the sequence of nodes for all timesteps
+const ALL_TIMESTEP_NODES = [
   'intro-rnn',
-  't1_input',
-  't1_h_prev',
-  't1_calc_h',
-  't1_calc_y',
-  't1_pred',
+  // Timestep 1
+  't1_input', 't1_h_prev', 't1_w_xh', 't1_w_hh', 't1_b_h', 't1_calc_h', 't1_w_hy', 't1_b_y', 't1_calc_y', 't1_pred',
+  // Timestep 2  
+  't2_input', 't2_h_prev', 't2_w_xh', 't2_w_hh', 't2_b_h', 't2_calc_h', 't2_w_hy', 't2_b_y', 't2_calc_y', 't2_pred',
+  // Timestep 3
+  't3_input', 't3_h_prev', 't3_w_xh', 't3_w_hh', 't3_b_h', 't3_calc_h', 't3_w_hy', 't3_b_y', 't3_calc_y', 't3_pred',
+  // Timestep 4
+  't4_input', 't4_h_prev', 't4_w_xh', 't4_w_hh', 't4_b_h', 't4_calc_h', 't4_w_hy', 't4_b_y', 't4_calc_y', 't4_pred',
 ];
 
 function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: (isDark: boolean) => void }) {
@@ -57,15 +60,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
   }, []);
 
   const processedNodes = useMemo(() => {
-    // These nodes are always enabled because they are static inputs/weights
-    const alwaysEnabledNodes = ['w_xh', 'w_hh', 'w_hy', 'b_h', 'b_y'];
-
     return rawInitialNodes.map(node => {
-      // Always enable static weight/bias nodes
-      if (alwaysEnabledNodes.includes(node.id)) {
-        return { ...node, data: { ...node.data, disabled: false, onComplete: handleNodeComplete } };
-      }
-
       // Handle the intro node separately
       if (node.id === 'intro-rnn') {
         // Intro node is only active if not yet completed and no other nodes are enabled yet
@@ -80,35 +75,136 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
         };
       }
 
-      // Logic for Timestep 1 nodes
+      // Logic for all timesteps
       let disabled = true;
       const isIntroCompleted = completedNodeIds.has('intro-rnn');
-      const isInputCompleted = completedNodeIds.has('t1_input') && completedNodeIds.has('t1_h_prev');
-      const isCalcHCompleted = completedNodeIds.has('t1_calc_h');
-      const isCalcYCompleted = completedNodeIds.has('t1_calc_y');
-      const isPredCompleted = completedNodeIds.has('t1_pred');
+      
+      // Timestep 1 logic
+      const isT1InputCompleted = completedNodeIds.has('t1_input') && completedNodeIds.has('t1_h_prev');
+      const isT1WeightsCompleted = completedNodeIds.has('t1_w_xh') && completedNodeIds.has('t1_w_hh') && completedNodeIds.has('t1_b_h');
+      const isT1CalcHCompleted = completedNodeIds.has('t1_calc_h');
+      const isT1OutputWeightsCompleted = completedNodeIds.has('t1_w_hy') && completedNodeIds.has('t1_b_y');
+      const isT1CalcYCompleted = completedNodeIds.has('t1_calc_y');
+      const isT1PredCompleted = completedNodeIds.has('t1_pred');
+      
+      // Timestep 2 logic
+      const isT2InputCompleted = completedNodeIds.has('t2_input') && completedNodeIds.has('t2_h_prev');
+      const isT2WeightsCompleted = completedNodeIds.has('t2_w_xh') && completedNodeIds.has('t2_w_hh') && completedNodeIds.has('t2_b_h');
+      const isT2CalcHCompleted = completedNodeIds.has('t2_calc_h');
+      const isT2OutputWeightsCompleted = completedNodeIds.has('t2_w_hy') && completedNodeIds.has('t2_b_y');
+      const isT2CalcYCompleted = completedNodeIds.has('t2_calc_y');
+      const isT2PredCompleted = completedNodeIds.has('t2_pred');
+      
+      // Timestep 3 logic
+      const isT3InputCompleted = completedNodeIds.has('t3_input') && completedNodeIds.has('t3_h_prev');
+      const isT3WeightsCompleted = completedNodeIds.has('t3_w_xh') && completedNodeIds.has('t3_w_hh') && completedNodeIds.has('t3_b_h');
+      const isT3CalcHCompleted = completedNodeIds.has('t3_calc_h');
+      const isT3OutputWeightsCompleted = completedNodeIds.has('t3_w_hy') && completedNodeIds.has('t3_b_y');
+      const isT3CalcYCompleted = completedNodeIds.has('t3_calc_y');
+      const isT3PredCompleted = completedNodeIds.has('t3_pred');
+      
+      // Timestep 4 logic
+      const isT4InputCompleted = completedNodeIds.has('t4_input') && completedNodeIds.has('t4_h_prev');
+      const isT4WeightsCompleted = completedNodeIds.has('t4_w_xh') && completedNodeIds.has('t4_w_hh') && completedNodeIds.has('t4_b_h');
+      const isT4CalcHCompleted = completedNodeIds.has('t4_calc_h');
+      const isT4OutputWeightsCompleted = completedNodeIds.has('t4_w_hy') && completedNodeIds.has('t4_b_y');
+      const isT4CalcYCompleted = completedNodeIds.has('t4_calc_y');
 
       switch (node.id) {
+        // Timestep 1
         case 't1_input':
         case 't1_h_prev':
-          disabled = !isIntroCompleted || completedNodeIds.has(node.id); // Enable once intro is done
+        case 't1_w_xh':
+        case 't1_w_hh':
+        case 't1_b_h':
+          disabled = !isIntroCompleted || completedNodeIds.has(node.id);
           break;
         case 't1_calc_h':
-          disabled = !isInputCompleted || completedNodeIds.has(node.id);
+          disabled = !isT1InputCompleted || !isT1WeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't1_w_hy':
+        case 't1_b_y':
+          disabled = !isT1CalcHCompleted || completedNodeIds.has(node.id);
           break;
         case 't1_calc_y':
-          disabled = !isCalcHCompleted || completedNodeIds.has(node.id);
+          disabled = !isT1CalcHCompleted || !isT1OutputWeightsCompleted || completedNodeIds.has(node.id);
           break;
         case 't1_pred':
-          disabled = !isCalcYCompleted || completedNodeIds.has(node.id);
+          disabled = !isT1CalcYCompleted || completedNodeIds.has(node.id);
           break;
+          
+        // Timestep 2 (enabled only after timestep 1 is complete)
+        case 't2_input':
+        case 't2_h_prev':
+        case 't2_w_xh':
+        case 't2_w_hh':
+        case 't2_b_h':
+          disabled = !isT1PredCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't2_calc_h':
+          disabled = !isT2InputCompleted || !isT2WeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't2_w_hy':
+        case 't2_b_y':
+          disabled = !isT2CalcHCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't2_calc_y':
+          disabled = !isT2CalcHCompleted || !isT2OutputWeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't2_pred':
+          disabled = !isT2CalcYCompleted || completedNodeIds.has(node.id);
+          break;
+          
+        // Timestep 3 (enabled only after timestep 2 is complete)
+        case 't3_input':
+        case 't3_h_prev':
+        case 't3_w_xh':
+        case 't3_w_hh':
+        case 't3_b_h':
+          disabled = !isT2PredCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't3_calc_h':
+          disabled = !isT3InputCompleted || !isT3WeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't3_w_hy':
+        case 't3_b_y':
+          disabled = !isT3CalcHCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't3_calc_y':
+          disabled = !isT3CalcHCompleted || !isT3OutputWeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't3_pred':
+          disabled = !isT3CalcYCompleted || completedNodeIds.has(node.id);
+          break;
+          
+        // Timestep 4 (enabled only after timestep 3 is complete)
+        case 't4_input':
+        case 't4_h_prev':
+        case 't4_w_xh':
+        case 't4_w_hh':
+        case 't4_b_h':
+          disabled = !isT3PredCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't4_calc_h':
+          disabled = !isT4InputCompleted || !isT4WeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't4_w_hy':
+        case 't4_b_y':
+          disabled = !isT4CalcHCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't4_calc_y':
+          disabled = !isT4CalcHCompleted || !isT4OutputWeightsCompleted || completedNodeIds.has(node.id);
+          break;
+        case 't4_pred':
+          disabled = !isT4CalcYCompleted || completedNodeIds.has(node.id);
+          break;
+          
         default:
           disabled = true; // All other future nodes are disabled for now
           break;
       }
 
-      // Keep nodes disabled if they are already completed, or if they are inputs to a completed node
-      // This prevents users from re-editing completed sections
+      // Keep nodes disabled if they are already completed
       if (completedNodeIds.has(node.id)) {
         disabled = true;
       }
@@ -147,6 +243,40 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
     }
   }, [showIntroModal, reactFlowInstance]);
 
+  // Effect to auto-navigate view as user progresses through timesteps
+  useEffect(() => {
+    const currentCompletedCount = completedNodeIds.size;
+    
+    // Navigate to different timesteps based on progress
+    if (completedNodeIds.has('t1_pred') && !completedNodeIds.has('t2_input')) {
+      // Just completed timestep 1, focus on timestep 2
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: 't2_input' }, { id: 't2_h_prev' }, { id: 't2_w_xh' }],
+          duration: 1000,
+          padding: 0.3
+        });
+      }, 500);
+    } else if (completedNodeIds.has('t2_pred') && !completedNodeIds.has('t3_input')) {
+      // Just completed timestep 2, focus on timestep 3
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: 't3_input' }, { id: 't3_h_prev' }, { id: 't3_w_xh' }],
+          duration: 1000,
+          padding: 0.3
+        });
+      }, 500);
+    } else if (completedNodeIds.has('t3_pred') && !completedNodeIds.has('t4_input')) {
+      // Just completed timestep 3, focus on timestep 4
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: 't4_input' }, { id: 't4_h_prev' }, { id: 't4_w_xh' }],
+          duration: 1000,
+          padding: 0.3
+        });
+      }, 500);
+    }
+  }, [completedNodeIds, reactFlowInstance]);
 
   return (
     <div className={`h-screen w-full flex flex-col transition-colors duration-300 relative overflow-hidden ${
@@ -165,12 +295,16 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 text-sm text-muted-foreground">
-            <p>We'll process the sequence <span className="font-bold text-lg text-orange-400 font-mono">"RNN!"</span> character by character. At each step, you'll calculate the network's internal **Hidden State** (its memory) and its **Prediction** for the next character.</p>
-            <p>Pay close attention to how the hidden state from one step is passed as input to the next!</p>
+            <p>We'll process the sequence <span className="font-bold text-lg text-orange-400 font-mono">"R" → "N" → "N" → "!"</span> character by character. At each step, you'll calculate the network's internal <strong>Hidden State</strong> (its memory) and its <strong>Prediction</strong> for the next character.</p>
+            <p>Notice how the <strong>same weight matrices</strong> appear at each timestep - this demonstrates the core RNN principle of <em>weight sharing</em> across time!</p>
+            <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+              <p className="text-purple-400 font-medium">🎯 Your Mission:</p>
+              <p className="text-sm">Complete all 4 timesteps to see how an RNN processes sequential data with shared weights and maintains memory across time!</p>
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={() => setShowIntroModal(false)} className="w-full">
-              Let's Start!
+              Let's Start the Journey! 🚀
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -181,10 +315,15 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
         isDark ? 'bg-slate-800/70 border-slate-700/50' : 'bg-white/80 border-slate-300/60'
       }`}>
         <h1 className="text-xl font-bold bg-gradient-to-r from-amber-500 to-red-500 bg-clip-text text-transparent">
-          Recurrent Neural Network: Forward Pass
+          RNN with Weight Sharing: Complete Forward Pass (R→N→N→!)
         </h1>
         <div className="flex items-center gap-4">
-          <Button onClick={resetWorkflow} variant="outline" size="sm" className="flex items-center gap-2"><RotateCcw className="w-4 h-4" /> Reset</Button>
+          <div className="text-sm text-muted-foreground">
+            Progress: {completedNodeIds.size - 1}/{ALL_TIMESTEP_NODES.length - 1} nodes
+          </div>
+          <Button onClick={resetWorkflow} variant="outline" size="sm" className="flex items-center gap-2">
+            <RotateCcw className="w-4 h-4" /> Reset
+          </Button>
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
         </div>
       </div>

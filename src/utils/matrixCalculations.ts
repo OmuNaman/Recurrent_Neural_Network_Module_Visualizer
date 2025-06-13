@@ -4,8 +4,10 @@
 // Our simple vocabulary for the "RNN" example
 export const VOCAB = ['R', 'N', '!'];
 
-// One-Hot Vector for the first input character: 'R'
+// One-Hot Vectors for all input characters
 export const ONE_HOT_R = [[1, 0, 0]];
+export const ONE_HOT_N = [[0, 1, 0]];
+export const ONE_HOT_EXCLAMATION = [[0, 0, 1]];
 
 // --- Weight Matrices & Biases (Initial Values) ---
 // W_xh (Input to Hidden): 3x4
@@ -88,18 +90,31 @@ export function softmax(matrix: number[][]): number[][] {
 }
 
 
-// --- Pre-calculated Forward Pass for Timestep 1 ---
+// --- Pre-calculated Forward Pass for All Timesteps ---
 
 // Initial hidden state h₀ (all zeros)
 const h0 = [[0, 0, 0, 0]];
-// Current input x₁ ('R')
+
+// Timestep 1: Input 'R'
 const x1 = ONE_HOT_R;
-
-// h₁ = tanh((x₁ ⋅ W_xh) + (h₀ ⋅ W_hh) + b_h)
 export const H1 = tanh(matrixAdd(matrixMultiply(x1, W_xh), matrixMultiply(h0, W_hh), b_h));
-
-// y₁ = h₁ ⋅ W_hy + b_y
 export const Y1 = matrixAdd(matrixMultiply(H1, W_hy), b_y);
-
-// ŷ₁ = Softmax(y₁)
 export const PRED1 = softmax(Y1);
+
+// Timestep 2: Input 'N'
+const x2 = ONE_HOT_N;
+export const H2 = tanh(matrixAdd(matrixMultiply(x2, W_xh), matrixMultiply(H1, W_hh), b_h));
+export const Y2 = matrixAdd(matrixMultiply(H2, W_hy), b_y);
+export const PRED2 = softmax(Y2);
+
+// Timestep 3: Input 'N'
+const x3 = ONE_HOT_N;
+export const H3 = tanh(matrixAdd(matrixMultiply(x3, W_xh), matrixMultiply(H2, W_hh), b_h));
+export const Y3 = matrixAdd(matrixMultiply(H3, W_hy), b_y);
+export const PRED3 = softmax(Y3);
+
+// Timestep 4: Input '!'
+const x4 = ONE_HOT_EXCLAMATION;
+export const H4 = tanh(matrixAdd(matrixMultiply(x4, W_xh), matrixMultiply(H3, W_hh), b_h));
+export const Y4 = matrixAdd(matrixMultiply(H4, W_hy), b_y);
+export const PRED4 = softmax(Y4);
