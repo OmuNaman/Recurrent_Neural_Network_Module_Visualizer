@@ -3,16 +3,29 @@ import type { Node, Edge } from '@xyflow/react';
 import { 
   VOCAB, ONE_HOT_A, ONE_HOT_B,
   W_xh, W_hh, W_hy, b_h, b_y,
-  H1, Y1, PRED1, H2, Y2, PRED2 // Only H1/Y1/PRED1 and H2/Y2/PRED2
+  H1, Y1, PRED1, H2, Y2, PRED2,
+  // Backward propagation imports
+  TARGET_T1, TARGET_T2, TOTAL_LOSS, LOSS_T1, LOSS_T2,
+  dL_dPred1, dL_dPred2, dL_dY1, dL_dY2,
+  dL_dH1, dL_dH2_final, dL_dWhy, dL_dby,
+  dL_dWxh, dL_dWhh, dL_dbh
 } from './matrixCalculations';
 
 // Node Positions - Spacing for 2 timesteps
 const col_timestep_1 = 0;
 const col_timestep_2 = 3000; // Spacing for the second timestep
 
+// Backward propagation starts after forward pass
+const col_backward_start = 6000; // Start backward pass after T2
+const col_backward_loss = col_backward_start;
+const col_backward_grad_output = col_backward_start + 800;
+const col_backward_grad_hidden = col_backward_start + 1600;
+const col_backward_grad_weights = col_backward_start + 2400;
+
 const row_input = 0;
 const row_h_prev = 400;
 const row_calc_h = 800;
+const row_backward_main = 400; // Center row for backward pass
 
 // Consistent weight matrix positions for all timesteps
 const weight_offset_x = -800; // Distance from timestep center to weights
@@ -183,6 +196,189 @@ export const initialNodes: Node[] = [
     },
     zIndex: 1
   },
+
+  // =================== BACKWARD PROPAGATION SECTION ===================
+  
+  // --- Loss Calculation ---
+  {
+    id: 'loss_calculation',
+    type: 'calculation',
+    position: { x: col_backward_loss, y: row_backward_main },
+    data: {
+      label: 'Calculate Total Loss',
+      formula: "L = L₁ + L₂ = -log(ŷ₁[target]) - log(ŷ₂[target])",
+      expectedMatrix: [[TOTAL_LOSS]],
+      hint: 'Cross-entropy loss for both timesteps combined.',
+      description: `Loss T1: ${LOSS_T1.toFixed(4)}, Loss T2: ${LOSS_T2.toFixed(4)}`
+    },
+    zIndex: 1
+  },
+
+  // --- Target Labels ---
+  {
+    id: 'target_t1',
+    type: 'matrix',
+    position: { x: col_backward_loss - 300, y: row_backward_main - 200 },
+    data: {
+      label: 'Target T1',
+      matrix: TARGET_T1,
+      description: 'Expected output after "A" → "B"',
+      vocabulary: VOCAB
+    },
+    zIndex: 1
+  },
+  {
+    id: 'target_t2',
+    type: 'matrix',
+    position: { x: col_backward_loss - 300, y: row_backward_main + 200 },
+    data: {
+      label: 'Target T2',
+      matrix: TARGET_T2,
+      description: 'Expected output after "B" → "A"',
+      vocabulary: VOCAB
+    },
+    zIndex: 1
+  },
+
+  // --- Gradients w.r.t. Outputs ---
+  {
+    id: 'grad_pred1',
+    type: 'calculation',
+    position: { x: col_backward_grad_output, y: row_backward_main - 200 },
+    data: {
+      label: 'Gradient ∂L/∂ŷ₁',
+      formula: "∂L/∂ŷ₁ = ŷ₁ - target₁",
+      expectedMatrix: dL_dPred1,
+      hint: 'Gradient of loss w.r.t. softmax output T1'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_pred2',
+    type: 'calculation',
+    position: { x: col_backward_grad_output, y: row_backward_main + 200 },
+    data: {
+      label: 'Gradient ∂L/∂ŷ₂',
+      formula: "∂L/∂ŷ₂ = ŷ₂ - target₂",
+      expectedMatrix: dL_dPred2,
+      hint: 'Gradient of loss w.r.t. softmax output T2'
+    },
+    zIndex: 1
+  },
+
+  // --- Gradients w.r.t. Logits ---
+  {
+    id: 'grad_y1',
+    type: 'calculation',
+    position: { x: col_backward_grad_output + 300, y: row_backward_main - 200 },
+    data: {
+      label: 'Gradient ∂L/∂y₁',
+      formula: "∂L/∂y₁ = ∂L/∂ŷ₁",
+      expectedMatrix: dL_dY1,
+      hint: 'For cross-entropy + softmax: ∂L/∂y = ∂L/∂ŷ'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_y2',
+    type: 'calculation',
+    position: { x: col_backward_grad_output + 300, y: row_backward_main + 200 },
+    data: {
+      label: 'Gradient ∂L/∂y₂',
+      formula: "∂L/∂y₂ = ∂L/∂ŷ₂",
+      expectedMatrix: dL_dY2,
+      hint: 'For cross-entropy + softmax: ∂L/∂y = ∂L/∂ŷ'
+    },
+    zIndex: 1
+  },
+
+  // --- Gradients w.r.t. Hidden States ---
+  {
+    id: 'grad_h1',
+    type: 'calculation',
+    position: { x: col_backward_grad_hidden, y: row_backward_main - 200 },
+    data: {
+      label: 'Gradient ∂L/∂h₁',
+      formula: "∂L/∂h₁ = ∂L/∂y₁ ⋅ W_hy^T + ∂L/∂h₂ ⋅ (∂h₂/∂h₁)",
+      expectedMatrix: dL_dH1,
+      hint: 'Hidden state gradient includes contributions from both outputs'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_h2',
+    type: 'calculation',
+    position: { x: col_backward_grad_hidden, y: row_backward_main + 200 },
+    data: {
+      label: 'Gradient ∂L/∂h₂',
+      formula: "∂L/∂h₂ = ∂L/∂y₂ ⋅ W_hy^T",
+      expectedMatrix: dL_dH2_final,
+      hint: 'Hidden state gradient from output only'
+    },
+    zIndex: 1
+  },
+
+  // --- Weight and Bias Gradients ---
+  {
+    id: 'grad_why',
+    type: 'calculation',
+    position: { x: col_backward_grad_weights, y: row_backward_main - 300 },
+    data: {
+      label: 'Gradient ∂L/∂W_hy',
+      formula: "∂L/∂W_hy = h₁^T ⋅ ∂L/∂y₁ + h₂^T ⋅ ∂L/∂y₂",
+      expectedMatrix: dL_dWhy,
+      hint: 'Accumulate gradients from both timesteps'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_by',
+    type: 'calculation',
+    position: { x: col_backward_grad_weights, y: row_backward_main - 100 },
+    data: {
+      label: 'Gradient ∂L/∂b_y',
+      formula: "∂L/∂b_y = ∂L/∂y₁ + ∂L/∂y₂",
+      expectedMatrix: dL_dby,
+      hint: 'Sum gradients from both timesteps'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_wxh',
+    type: 'calculation',
+    position: { x: col_backward_grad_weights, y: row_backward_main + 100 },
+    data: {
+      label: 'Gradient ∂L/∂W_xh',
+      formula: "∂L/∂W_xh = x₁^T ⋅ δ₁ + x₂^T ⋅ δ₂",
+      expectedMatrix: dL_dWxh,
+      hint: 'Input-to-hidden weight gradients'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_whh',
+    type: 'calculation',
+    position: { x: col_backward_grad_weights, y: row_backward_main + 300 },
+    data: {
+      label: 'Gradient ∂L/∂W_hh',
+      formula: "∂L/∂W_hh = h₀^T ⋅ δ₁ + h₁^T ⋅ δ₂",
+      expectedMatrix: dL_dWhh,
+      hint: 'Hidden-to-hidden weight gradients'
+    },
+    zIndex: 1
+  },
+  {
+    id: 'grad_bh',
+    type: 'calculation',
+    position: { x: col_backward_grad_weights + 400, y: row_backward_main },
+    data: {
+      label: 'Gradient ∂L/∂b_h',
+      formula: "∂L/∂b_h = δ₁ + δ₂",
+      expectedMatrix: dL_dbh,
+      hint: 'Hidden bias gradients from both timesteps'
+    },
+    zIndex: 1
+  },
 ];
 
 export const initialEdges: Edge[] = [
@@ -208,4 +404,37 @@ export const initialEdges: Edge[] = [
   { id: 'e-t2why-t2y', source: 't2_w_hy', target: 't2_calc_y', style: { strokeDasharray: '5 5' } },
   { id: 'e-t2by-t2y', source: 't2_b_y', target: 't2_calc_y', style: { strokeDasharray: '5 5' } },
   { id: 'e-y2-t2p', source: 't2_calc_y', target: 't2_pred', animated: true },
+
+  // --- BACKWARD PROPAGATION CONNECTIONS ---
+  
+  // From forward pass predictions to loss calculation
+  { id: 'e-t1pred-loss', source: 't1_pred', target: 'loss_calculation', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-t2pred-loss', source: 't2_pred', target: 'loss_calculation', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-target1-loss', source: 'target_t1', target: 'loss_calculation', style: { strokeDasharray: '5 5', stroke: '#ef4444' } },
+  { id: 'e-target2-loss', source: 'target_t2', target: 'loss_calculation', style: { strokeDasharray: '5 5', stroke: '#ef4444' } },
+
+  // Loss to output gradients
+  { id: 'e-loss-gradpred1', source: 'loss_calculation', target: 'grad_pred1', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-loss-gradpred2', source: 'loss_calculation', target: 'grad_pred2', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+
+  // Output gradients to logit gradients
+  { id: 'e-gradpred1-grady1', source: 'grad_pred1', target: 'grad_y1', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradpred2-grady2', source: 'grad_pred2', target: 'grad_y2', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+
+  // Logit gradients to hidden gradients
+  { id: 'e-grady1-gradh1', source: 'grad_y1', target: 'grad_h1', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-grady2-gradh2', source: 'grad_y2', target: 'grad_h2', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh2-gradh1', source: 'grad_h2', target: 'grad_h1', animated: true, style: { stroke: '#ef4444', strokeWidth: 3 } }, // h1 gets gradient from h2
+
+  // Hidden gradients to weight gradients
+  { id: 'e-gradh1-gradwhy', source: 'grad_h1', target: 'grad_why', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh2-gradwhy', source: 'grad_h2', target: 'grad_why', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-grady1-gradby', source: 'grad_y1', target: 'grad_by', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-grady2-gradby', source: 'grad_y2', target: 'grad_by', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh1-gradwxh', source: 'grad_h1', target: 'grad_wxh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh2-gradwxh', source: 'grad_h2', target: 'grad_wxh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh1-gradwhh', source: 'grad_h1', target: 'grad_whh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh2-gradwhh', source: 'grad_h2', target: 'grad_whh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh1-gradbh', source: 'grad_h1', target: 'grad_bh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
+  { id: 'e-gradh2-gradbh', source: 'grad_h2', target: 'grad_bh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
 ];

@@ -35,13 +35,16 @@ const nodeTypes = {
   introNode: IntroNode,
 };
 
-// Define the sequence of nodes for 2 timesteps
+// Define the sequence of nodes for 2 timesteps + backward propagation
 const ALL_TIMESTEP_NODES = [
   'intro-rnn',
-  // Timestep 1
+  // Forward Pass - Timestep 1
   't1_input', 't1_h_prev', 't1_w_xh', 't1_w_hh', 't1_b_h', 't1_calc_h', 't1_w_hy', 't1_b_y', 't1_calc_y', 't1_pred',
-  // Timestep 2  
+  // Forward Pass - Timestep 2  
   't2_input', 't2_h_prev', 't2_w_xh', 't2_w_hh', 't2_b_h', 't2_calc_h', 't2_w_hy', 't2_b_y', 't2_calc_y', 't2_pred',
+  // Backward Pass
+  'target_t1', 'target_t2', 'loss_calculation', 'grad_pred1', 'grad_pred2', 'grad_y1', 'grad_y2', 
+  'grad_h2', 'grad_h1', 'grad_why', 'grad_by', 'grad_wxh', 'grad_whh', 'grad_bh'
 ];
 
 function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: (isDark: boolean) => void }) {
@@ -129,6 +132,38 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
         case 't2_pred':
           disabled = !completedNodeIds.has('t2_calc_y') || completedNodeIds.has(node.id); // Depends on t2_calc_y
           break;
+
+        // Backward Propagation - starts after forward pass completion
+        case 'target_t1':
+        case 'target_t2':
+          disabled = !completedNodeIds.has('t2_pred') || completedNodeIds.has(node.id);
+          break;
+        case 'loss_calculation':
+          disabled = !completedNodeIds.has('target_t1') || !completedNodeIds.has('target_t2') || completedNodeIds.has(node.id);
+          break;
+        case 'grad_pred1':
+        case 'grad_pred2':
+          disabled = !completedNodeIds.has('loss_calculation') || completedNodeIds.has(node.id);
+          break;
+        case 'grad_y1':
+          disabled = !completedNodeIds.has('grad_pred1') || completedNodeIds.has(node.id);
+          break;
+        case 'grad_y2':
+          disabled = !completedNodeIds.has('grad_pred2') || completedNodeIds.has(node.id);
+          break;
+        case 'grad_h2':
+          disabled = !completedNodeIds.has('grad_y2') || completedNodeIds.has(node.id);
+          break;
+        case 'grad_h1':
+          disabled = !completedNodeIds.has('grad_y1') || !completedNodeIds.has('grad_h2') || completedNodeIds.has(node.id);
+          break;
+        case 'grad_why':
+        case 'grad_by':
+        case 'grad_wxh':
+        case 'grad_whh':
+        case 'grad_bh':
+          disabled = !completedNodeIds.has('grad_h1') || !completedNodeIds.has('grad_h2') || completedNodeIds.has(node.id);
+          break;
           
         default:
           disabled = true; 
@@ -180,7 +215,38 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
         });
       }, 500);
     }
-    // No further navigation needed after T2 for this 2-step example
+    
+    // Navigate to backward pass after forward pass completion
+    if (completedNodeIds.has('t2_pred') && !completedNodeIds.has('target_t1')) {
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: 'target_t1' }, { id: 'target_t2' }, { id: 'loss_calculation' }],
+          duration: 1000,
+          padding: 0.3
+        });
+      }, 500);
+    }
+    
+    // Navigate through backward pass stages
+    if (completedNodeIds.has('loss_calculation') && !completedNodeIds.has('grad_pred1')) {
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: 'grad_pred1' }, { id: 'grad_pred2' }, { id: 'grad_y1' }],
+          duration: 1000,
+          padding: 0.3
+        });
+      }, 500);
+    }
+    
+    if (completedNodeIds.has('grad_h1') && !completedNodeIds.has('grad_why')) {
+      setTimeout(() => {
+        reactFlowInstance.fitView({
+          nodes: [{ id: 'grad_why' }, { id: 'grad_wxh' }, { id: 'grad_bh' }],
+          duration: 1000,
+          padding: 0.3
+        });
+      }, 500);
+    }
   }, [completedNodeIds, reactFlowInstance]);
 
   return (
@@ -195,15 +261,15 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
               Welcome to the Simplified RNN Lab!
             </DialogTitle>
             <DialogDescription className="pt-2 text-base">
-              Explore a two-timestep Recurrent Neural Network.
+              Explore a complete RNN training cycle: Forward + Backward Pass.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 text-sm text-muted-foreground">
-            <p>We'll process the sequence <span className="font-bold text-lg text-orange-400 font-mono">"A" → "B"</span> character by character. At each step, calculate the network's <strong>Hidden State</strong> and its <strong>Prediction</strong>.</p>
-            <p>Notice the <strong>same weight matrices</strong> are used at each timestep, demonstrating weight sharing.</p>
+            <p>We'll process the sequence <span className="font-bold text-lg text-orange-400 font-mono">"A" → "B"</span> character by character. Then calculate gradients through <strong>Backward Propagation</strong>.</p>
+            <p>Notice the <strong>same weight matrices</strong> are used at each timestep, and how gradients flow backward through time.</p>
             <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
               <p className="text-purple-400 font-medium">🎯 Your Mission:</p>
-              <p className="text-sm">Complete both timesteps to understand how an RNN processes sequences with shared weights and memory!</p>
+              <p className="text-sm">Complete the forward pass, then compute gradients through backpropagation to understand how RNNs learn!</p>
             </div>
           </div>
           <DialogFooter>
@@ -218,7 +284,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
         isDark ? 'bg-slate-800/70 border-slate-700/50' : 'bg-white/80 border-slate-300/60'
       }`}>
         <h1 className="text-xl font-bold bg-gradient-to-r from-amber-500 to-red-500 bg-clip-text text-transparent">
-          RNN: 2-Timestep Forward Pass (A→B)
+          RNN: Forward & Backward Pass (A→B)
         </h1>
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
