@@ -1,39 +1,39 @@
 // FILE: src/utils/matrixCalculations.ts
 
 // --- RNN Parameters ---
-// Our simple vocabulary for the "RNN" example
-export const VOCAB = ['R', 'N', '!'];
+// Simplified vocabulary for the 2-timestep RNN example
+export const VOCAB = ['A', 'B'];
 
 // One-Hot Vectors for all input characters
-export const ONE_HOT_R = [[1, 0, 0]];
-export const ONE_HOT_N = [[0, 1, 0]];
-export const ONE_HOT_EXCLAMATION = [[0, 0, 1]];
+export const ONE_HOT_A = [[1, 0]]; // Vocab size is 2
+export const ONE_HOT_B = [[0, 1]];
 
 // --- Weight Matrices & Biases (Initial Values) ---
-// W_xh (Input to Hidden): 3x4
+// W_xh (Input to Hidden): VocabSize x HiddenSize (2x4)
 export const W_xh = [
   [ 0.5, -0.2,  0.8,  0.1],
-  [ 0.3,  0.6, -0.4,  0.9],
-  [-0.1,  0.7,  0.3, -0.5]
+  [ 0.3,  0.6, -0.4,  0.9]
+  // Removed third row as vocab size is now 2
 ];
-// W_hh (Hidden to Hidden): 4x4
+// W_hh (Hidden to Hidden): HiddenSize x HiddenSize (4x4) - Stays the same
 export const W_hh = [
   [ 0.2,  0.5, -0.3,  0.4],
   [-0.1,  0.7,  0.6, -0.2],
   [ 0.8, -0.4,  0.1,  0.9],
   [ 0.3, -0.1,  0.5,  0.7]
 ];
-// W_hy (Hidden to Output): 4x3
+// W_hy (Hidden to Output): HiddenSize x VocabSize (4x2)
 export const W_hy = [
-  [ 0.6, -0.3,  0.1],
-  [-0.2,  0.8,  0.4],
-  [ 0.9, -0.1, -0.5],
-  [ 0.3,  0.7, -0.2]
+  [ 0.6, -0.3],
+  [-0.2,  0.8],
+  [ 0.9, -0.1],
+  [ 0.3,  0.7]
+  // Removed third column as vocab size is now 2
 ];
 
 // Biases
-export const b_h = [[0.1, 0.1, 0.1, 0.1]]; // Hidden bias
-export const b_y = [[0.1, 0.1, 0.1]];     // Output bias
+export const b_h = [[0.1, 0.1, 0.1, 0.1]]; // Hidden bias (1x4) - Stays the same
+export const b_y = [[0.1, 0.1]];          // Output bias (1x2) - Adjusted for vocab size 2
 
 
 // --- Math Helpers ---
@@ -90,31 +90,19 @@ export function softmax(matrix: number[][]): number[][] {
 }
 
 
-// --- Pre-calculated Forward Pass for All Timesteps ---
+// --- Pre-calculated Forward Pass for 2 Timesteps ---
 
 // Initial hidden state h₀ (all zeros)
 const h0 = [[0, 0, 0, 0]];
 
-// Timestep 1: Input 'R'
-const x1 = ONE_HOT_R;
+// Timestep 1: Input 'A'
+const x1 = ONE_HOT_A;
 export const H1 = tanh(matrixAdd(matrixMultiply(x1, W_xh), matrixMultiply(h0, W_hh), b_h));
 export const Y1 = matrixAdd(matrixMultiply(H1, W_hy), b_y);
 export const PRED1 = softmax(Y1);
 
-// Timestep 2: Input 'N'
-const x2 = ONE_HOT_N;
+// Timestep 2: Input 'B' (previous hidden state is H1)
+const x2 = ONE_HOT_B;
 export const H2 = tanh(matrixAdd(matrixMultiply(x2, W_xh), matrixMultiply(H1, W_hh), b_h));
 export const Y2 = matrixAdd(matrixMultiply(H2, W_hy), b_y);
 export const PRED2 = softmax(Y2);
-
-// Timestep 3: Input 'N'
-const x3 = ONE_HOT_N;
-export const H3 = tanh(matrixAdd(matrixMultiply(x3, W_xh), matrixMultiply(H2, W_hh), b_h));
-export const Y3 = matrixAdd(matrixMultiply(H3, W_hy), b_y);
-export const PRED3 = softmax(Y3);
-
-// Timestep 4: Input '!'
-const x4 = ONE_HOT_EXCLAMATION;
-export const H4 = tanh(matrixAdd(matrixMultiply(x4, W_xh), matrixMultiply(H3, W_hh), b_h));
-export const Y4 = matrixAdd(matrixMultiply(H4, W_hy), b_y);
-export const PRED4 = softmax(Y4);

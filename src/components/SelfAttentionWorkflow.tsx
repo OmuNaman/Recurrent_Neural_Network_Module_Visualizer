@@ -9,7 +9,7 @@ import {
   useEdgesState,
   Connection,
   ReactFlowProvider,
-  useReactFlow // Import useReactFlow for fitView
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -17,43 +17,37 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, Cpu } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'; // Import Dialog components
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-// Import all custom node types
 import { WordVectorNode } from '@/components/workflow/WordVectorNode';
 import { MatrixNode } from '@/components/workflow/MatrixNode';
 import { CalculationNode } from '@/components/workflow/CalculationNode';
-import { ActivationNode } from '@/components/workflow/ActivationNode'; // ADD THIS IMPORT
-import { IntroNode } from '@/components/workflow/IntroNode';             // ADD THIS IMPORT
+import { ActivationNode } from '@/components/workflow/ActivationNode';
+import { IntroNode } from '@/components/workflow/IntroNode';
 
 import { initialNodes as rawInitialNodes, initialEdges } from '@/utils/workflowData';
 
-// Define all custom node types used in the workflow
 const nodeTypes = {
   wordVector: WordVectorNode,
   matrix: MatrixNode,
   calculation: CalculationNode,
-  activation: ActivationNode, // ADD THIS LINE
-  introNode: IntroNode,       // ADD THIS LINE
+  activation: ActivationNode,
+  introNode: IntroNode,
 };
 
-// Define the sequence of nodes for all timesteps
+// Define the sequence of nodes for 2 timesteps
 const ALL_TIMESTEP_NODES = [
   'intro-rnn',
   // Timestep 1
   't1_input', 't1_h_prev', 't1_w_xh', 't1_w_hh', 't1_b_h', 't1_calc_h', 't1_w_hy', 't1_b_y', 't1_calc_y', 't1_pred',
   // Timestep 2  
   't2_input', 't2_h_prev', 't2_w_xh', 't2_w_hh', 't2_b_h', 't2_calc_h', 't2_w_hy', 't2_b_y', 't2_calc_y', 't2_pred',
-  // Timestep 3
-  't3_input', 't3_h_prev', 't3_w_xh', 't3_w_hh', 't3_b_h', 't3_calc_h', 't3_w_hy', 't3_b_y', 't3_calc_y', 't3_pred',
-  // Timestep 4
-  't4_input', 't4_h_prev', 't4_w_xh', 't4_w_hh', 't4_b_h', 't4_calc_h', 't4_w_hy', 't4_b_y', 't4_calc_y', 't4_pred',
 ];
 
 function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: (isDark: boolean) => void }) {
   const [completedNodeIds, setCompletedNodeIds] = useState<Set<string>>(new Set());
-  const [showIntroModal, setShowIntroModal] = useState(true); // State to control the intro modal
-  const reactFlowInstance = useReactFlow(); // Get React Flow instance for fitting view
+  const [showIntroModal, setShowIntroModal] = useState(true);
+  const reactFlowInstance = useReactFlow();
 
   const handleNodeComplete = useCallback((nodeId: string) => {
     setCompletedNodeIds(prev => new Set(prev).add(nodeId));
@@ -61,9 +55,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
 
   const processedNodes = useMemo(() => {
     return rawInitialNodes.map(node => {
-      // Handle the intro node separately
       if (node.id === 'intro-rnn') {
-        // Intro node is only active if not yet completed and no other nodes are enabled yet
         const isIntroActive = !completedNodeIds.has('intro-rnn') && completedNodeIds.size === 0;
         return { 
           ...node, 
@@ -75,7 +67,6 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
         };
       }
 
-      // Logic for all timesteps
       let disabled = true;
       const isIntroCompleted = completedNodeIds.has('intro-rnn');
       
@@ -92,23 +83,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
       const isT2WeightsCompleted = completedNodeIds.has('t2_w_xh') && completedNodeIds.has('t2_w_hh') && completedNodeIds.has('t2_b_h');
       const isT2CalcHCompleted = completedNodeIds.has('t2_calc_h');
       const isT2OutputWeightsCompleted = completedNodeIds.has('t2_w_hy') && completedNodeIds.has('t2_b_y');
-      const isT2CalcYCompleted = completedNodeIds.has('t2_calc_y');
-      const isT2PredCompleted = completedNodeIds.has('t2_pred');
-      
-      // Timestep 3 logic
-      const isT3InputCompleted = completedNodeIds.has('t3_input') && completedNodeIds.has('t3_h_prev');
-      const isT3WeightsCompleted = completedNodeIds.has('t3_w_xh') && completedNodeIds.has('t3_w_hh') && completedNodeIds.has('t3_b_h');
-      const isT3CalcHCompleted = completedNodeIds.has('t3_calc_h');
-      const isT3OutputWeightsCompleted = completedNodeIds.has('t3_w_hy') && completedNodeIds.has('t3_b_y');
-      const isT3CalcYCompleted = completedNodeIds.has('t3_calc_y');
-      const isT3PredCompleted = completedNodeIds.has('t3_pred');
-      
-      // Timestep 4 logic
-      const isT4InputCompleted = completedNodeIds.has('t4_input') && completedNodeIds.has('t4_h_prev');
-      const isT4WeightsCompleted = completedNodeIds.has('t4_w_xh') && completedNodeIds.has('t4_w_hh') && completedNodeIds.has('t4_b_h');
-      const isT4CalcHCompleted = completedNodeIds.has('t4_calc_h');
-      const isT4OutputWeightsCompleted = completedNodeIds.has('t4_w_hy') && completedNodeIds.has('t4_b_y');
-      const isT4CalcYCompleted = completedNodeIds.has('t4_calc_y');
+      // const isT2CalcYCompleted = completedNodeIds.has('t2_calc_y'); // Not needed for T2_pred enabling condition
 
       switch (node.id) {
         // Timestep 1
@@ -152,59 +127,14 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
           disabled = !isT2CalcHCompleted || !isT2OutputWeightsCompleted || completedNodeIds.has(node.id);
           break;
         case 't2_pred':
-          disabled = !isT2CalcYCompleted || completedNodeIds.has(node.id);
-          break;
-          
-        // Timestep 3 (enabled only after timestep 2 is complete)
-        case 't3_input':
-        case 't3_h_prev':
-        case 't3_w_xh':
-        case 't3_w_hh':
-        case 't3_b_h':
-          disabled = !isT2PredCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't3_calc_h':
-          disabled = !isT3InputCompleted || !isT3WeightsCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't3_w_hy':
-        case 't3_b_y':
-          disabled = !isT3CalcHCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't3_calc_y':
-          disabled = !isT3CalcHCompleted || !isT3OutputWeightsCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't3_pred':
-          disabled = !isT3CalcYCompleted || completedNodeIds.has(node.id);
-          break;
-          
-        // Timestep 4 (enabled only after timestep 3 is complete)
-        case 't4_input':
-        case 't4_h_prev':
-        case 't4_w_xh':
-        case 't4_w_hh':
-        case 't4_b_h':
-          disabled = !isT3PredCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't4_calc_h':
-          disabled = !isT4InputCompleted || !isT4WeightsCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't4_w_hy':
-        case 't4_b_y':
-          disabled = !isT4CalcHCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't4_calc_y':
-          disabled = !isT4CalcHCompleted || !isT4OutputWeightsCompleted || completedNodeIds.has(node.id);
-          break;
-        case 't4_pred':
-          disabled = !isT4CalcYCompleted || completedNodeIds.has(node.id);
+          disabled = !completedNodeIds.has('t2_calc_y') || completedNodeIds.has(node.id); // Depends on t2_calc_y
           break;
           
         default:
-          disabled = true; // All other future nodes are disabled for now
+          disabled = true; 
           break;
       }
 
-      // Keep nodes disabled if they are already completed
       if (completedNodeIds.has(node.id)) {
         disabled = true;
       }
@@ -218,11 +148,9 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
 
   const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
-  // Reset function to clear all progress and re-show modal
   const resetWorkflow = () => {
     setCompletedNodeIds(new Set());
     setShowIntroModal(true);
-    // Fit view to intro node after reset
     setTimeout(() => {
         reactFlowInstance.fitView({
             nodes: [{ id: 'intro-rnn' }],
@@ -232,7 +160,6 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
     }, 100);
   };
 
-  // Effect to fit view to the intro node on initial load
   useEffect(() => {
     if (showIntroModal) {
       reactFlowInstance.fitView({
@@ -243,13 +170,8 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
     }
   }, [showIntroModal, reactFlowInstance]);
 
-  // Effect to auto-navigate view as user progresses through timesteps
   useEffect(() => {
-    const currentCompletedCount = completedNodeIds.size;
-    
-    // Navigate to different timesteps based on progress
     if (completedNodeIds.has('t1_pred') && !completedNodeIds.has('t2_input')) {
-      // Just completed timestep 1, focus on timestep 2
       setTimeout(() => {
         reactFlowInstance.fitView({
           nodes: [{ id: 't2_input' }, { id: 't2_h_prev' }, { id: 't2_w_xh' }],
@@ -257,69 +179,50 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
           padding: 0.3
         });
       }, 500);
-    } else if (completedNodeIds.has('t2_pred') && !completedNodeIds.has('t3_input')) {
-      // Just completed timestep 2, focus on timestep 3
-      setTimeout(() => {
-        reactFlowInstance.fitView({
-          nodes: [{ id: 't3_input' }, { id: 't3_h_prev' }, { id: 't3_w_xh' }],
-          duration: 1000,
-          padding: 0.3
-        });
-      }, 500);
-    } else if (completedNodeIds.has('t3_pred') && !completedNodeIds.has('t4_input')) {
-      // Just completed timestep 3, focus on timestep 4
-      setTimeout(() => {
-        reactFlowInstance.fitView({
-          nodes: [{ id: 't4_input' }, { id: 't4_h_prev' }, { id: 't4_w_xh' }],
-          duration: 1000,
-          padding: 0.3
-        });
-      }, 500);
     }
+    // No further navigation needed after T2 for this 2-step example
   }, [completedNodeIds, reactFlowInstance]);
 
   return (
     <div className={`h-screen w-full flex flex-col transition-colors duration-300 relative overflow-hidden ${
        isDark ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'
     }`}>
-      {/* Intro Modal */}
       <Dialog open={showIntroModal} onOpenChange={setShowIntroModal}>
         <DialogContent className="sm:max-w-[550px] bg-background/95 backdrop-blur-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <Cpu className="text-purple-500" />
-              Welcome to the RNN Time-Traveler Lab!
+              Welcome to the Simplified RNN Lab!
             </DialogTitle>
             <DialogDescription className="pt-2 text-base">
-              You're about to explore the fundamental mechanism of Recurrent Neural Networks.
+              Explore a two-timestep Recurrent Neural Network.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 text-sm text-muted-foreground">
-            <p>We'll process the sequence <span className="font-bold text-lg text-orange-400 font-mono">"R" → "N" → "N" → "!"</span> character by character. At each step, you'll calculate the network's internal <strong>Hidden State</strong> (its memory) and its <strong>Prediction</strong> for the next character.</p>
-            <p>Notice how the <strong>same weight matrices</strong> appear at each timestep - this demonstrates the core RNN principle of <em>weight sharing</em> across time!</p>
+            <p>We'll process the sequence <span className="font-bold text-lg text-orange-400 font-mono">"A" → "B"</span> character by character. At each step, calculate the network's <strong>Hidden State</strong> and its <strong>Prediction</strong>.</p>
+            <p>Notice the <strong>same weight matrices</strong> are used at each timestep, demonstrating weight sharing.</p>
             <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
               <p className="text-purple-400 font-medium">🎯 Your Mission:</p>
-              <p className="text-sm">Complete all 4 timesteps to see how an RNN processes sequential data with shared weights and maintains memory across time!</p>
+              <p className="text-sm">Complete both timesteps to understand how an RNN processes sequences with shared weights and memory!</p>
             </div>
           </div>
           <DialogFooter>
             <Button onClick={() => setShowIntroModal(false)} className="w-full">
-              Let's Start the Journey! 🚀
+              Let's Begin! 🚀
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Header */}
       <div className={`shrink-0 sticky top-4 mx-4 z-50 flex items-center justify-between backdrop-blur-md shadow-lg rounded-lg p-4 transition-colors duration-300 ${
         isDark ? 'bg-slate-800/70 border-slate-700/50' : 'bg-white/80 border-slate-300/60'
       }`}>
         <h1 className="text-xl font-bold bg-gradient-to-r from-amber-500 to-red-500 bg-clip-text text-transparent">
-          RNN with Weight Sharing: Complete Forward Pass (R→N→N→!)
+          RNN: 2-Timestep Forward Pass (A→B)
         </h1>
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            Progress: {completedNodeIds.size - 1}/{ALL_TIMESTEP_NODES.length - 1} nodes
+            Progress: {Math.max(0, completedNodeIds.size - 1)}/{ALL_TIMESTEP_NODES.length - 1} nodes
           </div>
           <Button onClick={resetWorkflow} variant="outline" size="sm" className="flex items-center gap-2">
             <RotateCcw className="w-4 h-4" /> Reset
@@ -336,7 +239,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
-          fitView // Ensure fitView is enabled
+          fitView
         >
           <Background gap={32} size={1.5} color={isDark ? '#334155' : '#cbd5e1'} />
           <Controls />
@@ -346,8 +249,7 @@ function RNNWorkflowContent({ isDark, onToggleTheme }: { isDark: boolean; onTogg
   );
 }
 
-// Wrapper component to provide React Flow context
-export function SelfAttentionWorkflow() {
+export function SelfAttentionWorkflow() { // Consider renaming this component if it's no longer about Self-Attention
   const [isDark, setIsDark] = useState(true);
   const handleThemeToggle = (newIsDark: boolean) => setIsDark(newIsDark);
   return (
