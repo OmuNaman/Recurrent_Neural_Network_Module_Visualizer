@@ -326,7 +326,7 @@ export const initialNodes: Node[] = [
   {
     id: 'grad_why',
     type: 'calculation',
-    position: { x: col_final_grads_x, y: row_backward_main - 400 },
+    position: { x: col_final_grads_x, y: row_backward_main - 400 - 200},
     data: {
       label: 'Gradient ∂L/∂W_hy',
       formula: "∂L/∂W_hy = h₁^T ⋅ (∂L/∂y₁) + h₂^T ⋅ (∂L/∂y₂)",
@@ -338,7 +338,7 @@ export const initialNodes: Node[] = [
   {
     id: 'grad_by',
     type: 'calculation',
-    position: { x: col_final_grads_x - 500, y: row_backward_main - 200 - 500 },
+    position: { x: col_final_grads_x - 500 - 200, y: row_backward_main - 200 - 500},
     data: {
       label: 'Gradient ∂L/∂b_y',
       formula: "∂L/∂b_y = (∂L/∂y₁) + (∂L/∂y₂)",
@@ -350,7 +350,7 @@ export const initialNodes: Node[] = [
   {
     id: 'grad_wxh',
     type: 'calculation',
-    position: { x: col_final_grads_x, y: row_backward_main + 200 - 100}, // Centered
+    position: { x: col_final_grads_x, y: row_backward_main + 200 - 100 - 200 + 50}, // Centered
     data: {
       label: 'Gradient ∂L/∂W_xh',
       formula: "∂L/∂W_xh = x₁^T ⋅ δ₁ + x₂^T ⋅ δ₂ (where δ is (∂L/∂h) * tanh')",
@@ -374,7 +374,7 @@ export const initialNodes: Node[] = [
   {
     id: 'grad_bh',
     type: 'calculation',
-    position: { x: col_final_grads_x, y: row_backward_main + 700},
+    position: { x: col_final_grads_x, y: row_backward_main + 700 + 300},
     data: {
       label: 'Gradient ∂L/∂b_h',
       formula: "∂L/∂b_h = δ₁ + δ₂ (where δ is (∂L/∂h) * tanh')",
@@ -412,7 +412,7 @@ export const initialEdges: Edge[] = [
   // --- BACKWARD PROPAGATION CONNECTIONS ---
 
   // From forward pass predictions & targets to loss calculation
-  { id: 'e-t1pred-loss', source: 't1_pred', target: 'loss_calculation', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // Uncommented
+  // { id: 'e-t1pred-loss', source: 't1_pred', target: 'loss_calculation', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // Uncommented
   { id: 'e-t2pred-loss', source: 't2_pred', target: 'loss_calculation', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },
   { id: 'e-target1-loss', source: 'target_t1', target: 'loss_calculation', style: { strokeDasharray: '5 5', stroke: '#ef4444' } },
   { id: 'e-target2-loss', source: 'target_t2', target: 'loss_calculation', style: { strokeDasharray: '5 5', stroke: '#ef4444' } },
@@ -429,15 +429,10 @@ export const initialEdges: Edge[] = [
   { id: 'e-grady1-gradh1', source: 'grad_y1', target: 'grad_h1', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // ∂L/∂y₁ contributes to ∂L/∂h₁
   { id: 'e-grady2-gradh2', source: 'grad_y2', target: 'grad_h2', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // ∂L/∂y₂ contributes to ∂L/∂h₂
 
-  // Hidden gradient from h₂ backpropagates to h₁
-  // { id: 'e-gradh2-gradh1', source: 'grad_h2', target: 'grad_h1', animated: true, style: { stroke: '#ef4444', strokeWidth: 3, strokeDasharray: '5 2' } }, // h₁ gets gradient from h₂ (BPTT) - Uncommented
-
   // Gradients to Weight/Bias Gradients
   // ∂L/∂W_hy and ∂L/∂b_y
   { id: 'e-gradh1-gradwhy', source: 'grad_h1', target: 'grad_why', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // h₁ contributes to ∂L/∂W_hy via y₁
   { id: 'e-gradh2-gradwhy', source: 'grad_h2', target: 'grad_why', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // h₂ contributes to ∂L/∂W_hy via y₂
-  // { id: 'e-grady1-gradby', source: 'grad_y1', target: 'grad_by', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },   // ∂L/∂y₁ contributes to ∂L/∂b_y - Uncommented
-  // { id: 'e-grady2-gradby', source: 'grad_y2', target: 'grad_by', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } },   // ∂L/∂y₂ contributes to ∂L/∂b_y - Uncommented
 
   // ∂L/∂W_xh, ∂L/∂W_hh, ∂L/∂b_h
   { id: 'e-gradh1-gradwxh', source: 'grad_h1', target: 'grad_wxh', animated: true, style: { stroke: '#ef4444', strokeWidth: 2 } }, // ∂L/∂h₁ contributes to ∂L/∂W_xh (via x₁)
